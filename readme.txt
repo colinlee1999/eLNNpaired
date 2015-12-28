@@ -1,0 +1,1 @@
+This is an extended LNN model for paired gene differential analysis.
