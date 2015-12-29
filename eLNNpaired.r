@@ -1,3 +1,5 @@
+# *** this version is for cluster-wise eLNN paired ***
+
 # returns an ExpressionSet, containing information about classification in featureData
 # 'E_set' is an ExpressionSet
 # 't_pi_prior' is the initial value for 't_pi'
@@ -16,8 +18,8 @@ eLNNpaired <- function(
   verbose = 0,
   infinity = 1e100,
   converge_threshold = 1e-6,
-  param_limit_min = c(-6,-6,0.01,-6,-6),
-  param_limit_max = c(6,6,100,6,6),
+  param_limit_min = c(-6,0.01,-6,-6,-6,0.01,-6,-6,0,0.01,-6,-6),
+  param_limit_max = c(6,100,6,6,6,100,6,6,0,100,6,6),
   max_iteration_num_in_optim = 100,
   max_repeated_times = 1000
   )
@@ -32,8 +34,6 @@ eLNNpaired <- function(
 
   # 'sum_dgl_square_by_l' is an G * 1 matrix, the summation of every squared elements of 'data_matrix_of_E_Set' by row
   sum_dgl_square_by_l = apply(data_matrix_of_E_Set^2,1,sum, na.rm = TRUE)
-
-  
 
   # initial values of 'psi' = (\delta_1, \delta_2, k, \lambda, \nu)
 
@@ -53,17 +53,26 @@ eLNNpaired <- function(
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
-  k = k_prior
+  k_1 = k_prior
+  k_2 = k_prior
+  k_3 = k_prior
 
-  lambda = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
-  nu = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
+  lambda_1 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
+  lambda_2 = lambda_1
+  lambda_3 = lambda_1
+
+  nu_1 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
+  nu_2 = nu_1
+  nu_3 = nu_1
 
   if (plot)
   {
     hist(log10(temp_tau))
   }
 
-  psi = c(delta_1, delta_2, k, lambda, nu)
+  psi = c(delta_1, k_1, lambda_1, nu_1,
+          delta_2, k_2, lambda_2, nu_2,
+          0,       k_3, lambda_3, nu_3)
 
   t_pi = t_pi_prior
 
@@ -170,26 +179,27 @@ lf123 <- function(
   sum_dgl_square_by_l, 
   n)
 {
-  delta_1 = psi[1]
-  delta_2 = psi[2]
-  k = psi[3]
-  lambda = psi[4]
-  nu = psi[5]
-
-  alpha = exp(psi[4])
-  beta = exp(psi[5])
-
-  A = n/(2*(n*k+1))
-  B_g = sum_dgl_by_l/n
-  C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
-  D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) - n/2 * log(2*pi) - log(n*k+1)/2
-
-  logf1 = D - (n/2+alpha) * log (C_g + A * (exp(delta_1) - B_g)^2)
-  logf2 = D - (n/2+alpha) * log (C_g + A * (exp(delta_2) + B_g)^2)
-  logf3 = D - (n/2+alpha) * log (C_g + A * (B_g)^2)
-
-  result = cbind(logf1, logf2, logf3)
+  result = matrix(rep(0,length(sum_dgl_by_l)*3),length(sum_dgl_by_l),3)
   colnames(result) = c("logf1", "logf2", "logf3")
+
+  for (category in 1:3)
+  {
+    mu_0 = exp(psi[category*4-3])
+
+    if (category == 2) mu_0 = -mu_0
+    if (category == 3) mu_0 = 0
+
+    k = psi[category*4-2]
+    alpha = exp(psi[category*4-1])
+    beta = exp(psi[category*4])
+  
+    A = n/(2*(n*k+1))
+    B_g = sum_dgl_by_l/n
+    C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
+    D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) - n/2 * log(2*pi) - log(n*k+1)/2
+  
+    result[,category] = D - (n/2+alpha) * log (C_g + A * (mu_0 - B_g)^2)
+  }
 
   return (result)
 }
@@ -286,38 +296,47 @@ gradient_l_c <- function(
   converge_threshold, 
   infinity)
 {
-  delta_1 = psi[1]
-  delta_2 = psi[2]
-  k = psi[3]
-  lambda = psi[4]
-  nu = psi[5]
-
-  alpha = exp(psi[4])
-  beta = exp(psi[5])
-
   G = length(sum_dgl_by_l)
+  gradient_temp = matrix(rep(0,12),4,3)
 
-  A = n/(2*(n*k+1))
-  B_g = sum_dgl_by_l/n
-  C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
-  D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) -n/2 * log(2*pi) - log(n*k+1)/2
+  for (category in 1:3)
+  {
+    mu_0 = exp(psi[category*4-3])
+      k = psi[category*4-2]
+      
+      lambda = psi[category*4-1]
+      nu = psi[category*4]
 
-  d_delta_1 = - sum( tilde_z[,1] * (2*A*(exp(delta_1) - B_g))/(A*(exp(delta_1) - B_g)^2 + C_g)) * (n/2+alpha) * exp(delta_1)
+      alpha = exp(psi[category*4-1])
+      beta = exp(psi[category*4])
 
-  d_delta_2 = - sum( tilde_z[,2] * (2*A*(exp(delta_2) + B_g))/(A*(exp(delta_2) + B_g)^2 + C_g)) * (n/2+alpha) * exp(delta_2)
 
-  d_k = - (n * G)/(2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2 + alpha) * (sum(tilde_z[,1] * (exp(delta_1) - B_g)^2 / (A * (exp(delta_1) - B_g)^2 + C_g)) + sum(tilde_z[,2] * (exp(delta_2) + B_g)^2 / (A * (exp(delta_2) + B_g)^2 + C_g)) + sum(tilde_z[,3] * (B_g)^2 / (A * (B_g)^2 + C_g)))
+      A = n/(2*(n*k+1))
+      B_g = sum_dgl_by_l/n
+      C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
+      D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) -n/2 * log(2*pi) - log(n*k+1)/2
+      
+      if (category == 2) mu_0 = - mu_0
+      if (category == 3) mu_0 = 0
 
-  d_lambda = G * exp(lambda) * (nu + digamma(n/2+alpha) - digamma(alpha)) - exp(lambda) * ( sum(tilde_z[,1] * log(A * (exp(delta_1) - B_g)^2 + C_g)) + sum(tilde_z[,2] * log(A * (exp(delta_2) + B_g)^2 + C_g)) + sum(tilde_z[,3] * log(A * (B_g)^2 + C_g)))
+      d_delta = - sum(tilde_z[,category] * (2*A*(mu_0 - B_g))/(A*(mu_0 - B_g)^2 + C_g) * (n/2 + alpha) * mu_0)
 
-  d_nu = G * exp(lambda) - exp(nu) * (n/2 + exp(lambda)) * (sum(tilde_z[,1] / (A * (exp(delta_1) - B_g)^2 + C_g)) + sum(tilde_z[,2] / (A * (exp(delta_2) + B_g)^2 + C_g)) + sum(tilde_z[,3] / (A * (B_g)^2 + C_g)))
+      if (category == 3)
+      {
+        d_delta = 0
+      }
 
-  result = c(
-    d_delta_1, 
-    d_delta_2, 
-    d_k, 
-    d_lambda, 
-    d_nu) 
+      d_k = - (n * sum(tilde_z[,category])) / (2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2+alpha) *
+              sum(tilde_z[,category]*(mu_0-B_g)^2/(A*(mu_0-B_g)^2+C_g))
+      
+      d_lambda = sum(tilde_z[,category] * alpha * (nu + digamma(n/2+alpha) - digamma(alpha))) - alpha * ( sum(tilde_z[,category] * log(A * (mu_0 - B_g)^2 + C_g)) )
+      
+      d_nu = sum(tilde_z[,category]) * alpha - beta * (n/2 + alpha) * (sum(tilde_z[,category] / (A * (mu_0 - B_g)^2 + C_g)))
+      
+      gradient_temp[,category] = c(d_delta, d_k, d_lambda, d_nu)
+  }
+
+  result = c(gradient_temp)
 
   return (result)
 }
