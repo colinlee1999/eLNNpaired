@@ -1,3 +1,4 @@
+library(iCheck)
 # returns an ExpressionSet, containing information about classification in featureData
 # 'E_set' is an ExpressionSet
 # 't_pi_prior' is the initial value for 't_pi'
@@ -33,21 +34,31 @@ eLNNpaired <- function(
   # 'sum_dgl_square_by_l' is an G * 1 matrix, the summation of every squared elements of 'data_matrix_of_E_Set' by row
   sum_dgl_square_by_l = apply(data_matrix_of_E_Set^2,1,sum, na.rm = TRUE)
 
-  
-
-  # initial values of 'psi' = (\delta_1, \delta_2, k, \lambda, \nu)
-
   median_dgl_by_l = apply(data_matrix_of_E_Set, 1, median, na.rm=TRUE)
 
   sorted_median_dgl_by_l = sort(median_dgl_by_l)
 
-  temp = median(sorted_median_dgl_by_l[(ceiling(G * 0.95)):G], na.rm=TRUE)
-  if (temp>0) delta_1 = log(temp)
-  else delta_1 = delta_1_min
+  # here we use limma to determine 
+  # how much percentage of data
+  # we are going to use to estimate delta_1 and delta_2
+  
+  result.limma = lmFitPaired(E_Set, probeID.var = 'true_cluster', gene.var = 'est_cluster', chr.var = 'flag')
+  unsorted_frame.limma = result.limma$frame.unsorted
+  significant = unsorted_frame.limma[unsorted_frame.limma$pval<0.05,]
 
-  temp = median(sorted_median_dgl_by_l[1:(trunc(G * 0.05))], na.rm=TRUE)
+  num_positive_significant.limma = nrow(significant[significant$stats>0,])
+  num_negative_significant.limma = nrow(significant[significant$stats<0,])
+
+  print(num_positive_significant.limma)
+  print(num_negative_significant.limma)
+
+  temp = median(sorted_median_dgl_by_l[(G- num_positive_significant.limma):G], na.rm=TRUE)
+  if (temp>0) delta_1 = log(temp)
+  else delta_1 = param_limit_min[1]
+
+  temp = median(sorted_median_dgl_by_l[1:(num_negative_significant.limma+1)], na.rm=TRUE)
   if (temp<0) delta_2 = log(-temp)
-  else delta_2 = delta_2_min
+  else delta_2 = param_limit_min[2]
 
   temp_tau = 1 / (apply(data_matrix_of_E_Set, 1, mad, na.rm=TRUE)^2)
   omega = mad(median_dgl_by_l)^2
