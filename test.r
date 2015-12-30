@@ -21,4 +21,4 @@ b = c(2,2,2)
 t_pi = c(0.05, 0.05, 0.90)
 
 es = gen_data_by_eLNNpaired(G,n,psi,t_pi)
-result = eLNNpaired(es, verbose = 1, is_sim =1, max_iteration_num_in_optim = 10000)
+result = eLNNpaired(es, verbose = 1, is_sim =1)
