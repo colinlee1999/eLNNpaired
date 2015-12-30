@@ -8,7 +8,7 @@ source('rough_analyze.r')
 
 G = 10000
 n = 100
-times = 100
+times = 1
 
 delta_1 = 1
 k_1 = 2
