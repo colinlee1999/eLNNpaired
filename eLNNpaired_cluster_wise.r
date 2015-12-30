@@ -10,7 +10,7 @@
 # G is the number of genes,
 # n is the number of test samples for every genes
 
-eLNNpaired <- function(
+eLNNpaired_cluster_wise <- function(
   E_Set,
   b = c(2,2,2), 
   t_pi_prior = c(0.05, 0.05, 0.90),

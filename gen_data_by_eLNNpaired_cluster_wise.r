@@ -4,7 +4,7 @@
 # assayData[['exprs']] is an G by n matrix
 # featureData describes if gene i is differentially expressed
 
-gen_data_by_eLNNpaired <- function(G, n, psi, t_pi)
+gen_data_by_eLNNpaired_cluster_wise <- function(G, n, psi, t_pi)
 {
   data = matrix(, nrow = G, ncol = n)
   category_info = matrix(rep(0,G*3),G,3)

@@ -2,8 +2,8 @@ library("Biobase")
 # library("gtools")
 library("clues")
 
-source('gen_data_by_eLNNpaired.r')
-source('eLNNpaired.r')
+source('gen_data_by_eLNNpaired_cluster_wise.r')
+source('eLNNpaired_cluster_wise.r')
 source('rough_analyze.r')
 
 G = 10000
@@ -31,5 +31,5 @@ b = c(2,2,2)
 t_pi = c(0.05, 0.05, 0.90)
 
 
-es = gen_data_by_eLNNpaired(G,n,psi,t_pi)
-result = eLNNpaired(es, verbose = 1, is_sim =1)
+es = gen_data_by_eLNNpaired_cluster_wise(G,n,psi,t_pi)
+result = eLNNpaired_cluster_wise(es, verbose = 1, is_sim =1)
