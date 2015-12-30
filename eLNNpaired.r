@@ -11,6 +11,7 @@
 eLNNpaired <- function(
   E_Set,
   b = c(2,2,2), 
+  t_pi_prior = c(0.05, 0.05, 0.90),
   plot = 0, 
   is_sim = 0, 
   verbose = 0,
@@ -41,11 +42,11 @@ eLNNpaired <- function(
 
   sorted_median_dgl_by_l = sort(median_dgl_by_l)
 
-  temp = median(sorted_median_dgl_by_l[(ceiling(G * 0.95)):G], na.rm=TRUE)
+  temp = median(sorted_median_dgl_by_l[(ceiling(G * (1 - t_pi_prior[1]))):G], na.rm=TRUE)
   if (temp>0) delta_1 = log(temp)
   else delta_1 = delta_1_min
 
-  temp = median(sorted_median_dgl_by_l[1:(trunc(G * 0.05))], na.rm=TRUE)
+  temp = median(sorted_median_dgl_by_l[1:(trunc(G * t_pi_prior[2]))], na.rm=TRUE)
   if (temp<0) delta_2 = log(-temp)
   else delta_2 = delta_2_min
 
