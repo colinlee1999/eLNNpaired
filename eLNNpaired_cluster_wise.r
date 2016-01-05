@@ -83,9 +83,10 @@ eLNNpaired_cluster_wise <- function(
     n)
   {
     logf = lf123(psi, sum_dgl_by_l, sum_dgl_square_by_l, n)
-    t1 = t_pi[1] * exp(logf[,1])
-    t2 = t_pi[2] * exp(logf[,2])
-    t3 = t_pi[3] * exp(logf[,3])
+    max_logf = apply(logf, 1, max, na.rm = TRUE)
+    t1 = t_pi[1] * exp(logf[,1] - max_logf)
+    t2 = t_pi[2] * exp(logf[,2] - max_logf)
+    t3 = t_pi[3] * exp(logf[,3] - max_logf)
     total = t1 + t2 + t3
 
     result = cbind(t1, t2, t3)/total
