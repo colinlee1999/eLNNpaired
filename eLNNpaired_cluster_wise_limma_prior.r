@@ -12,7 +12,7 @@
 
 library(iCheck)
 
-eLNNpaired_cluster_wise <- function(
+eLNNpaired_cluster_wise_limma_prior <- function(
   E_Set,
   b = c(2,2,2), 
   t_pi_prior = c(0.05, 0.05, 0.90),
