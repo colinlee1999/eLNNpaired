@@ -11,16 +11,16 @@ n = 100
 times = 1
 
 delta_1 = 1
-k_1 = 2
+k_1 = exp(1)
 lambda_1 = 3
 nu_1 = 1
 
 delta_2 = 1
-k_2 = 2
+k_2 = exp(1)
 lambda_2 = 3
 nu_2 = 1
 
-k_3 = 2
+k_3 = exp(1)
 lambda_3 = 3
 nu_3 = 1
 

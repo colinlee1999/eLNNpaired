@@ -56,7 +56,7 @@ eLNNpaired_cluster_wise <- function(
       if (category == 2) mu_0 = -mu_0
       if (category == 3) mu_0 = 0
 
-      k = psi[category*4-2]
+      k = exp(psi[category*4-2])
       alpha = exp(psi[category*4-1])
       beta = exp(psi[category*4])
     
@@ -169,7 +169,7 @@ eLNNpaired_cluster_wise <- function(
     for (category in 1:3)
     {
       mu_0 = exp(psi[category*4-3])
-        k = psi[category*4-2]
+        k = exp(psi[category*4-2])
         
         lambda = psi[category*4-1]
         nu = psi[category*4]
@@ -193,14 +193,14 @@ eLNNpaired_cluster_wise <- function(
           d_delta = 0
         }
 
-        d_k = - (n * sum(tilde_z[,category])) / (2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2+alpha) *
-                sum(tilde_z[,category]*(mu_0-B_g)^2/(A*(mu_0-B_g)^2+C_g))
+        d_xi = k * ( - (n * sum(tilde_z[,category])) / (2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2+alpha) *
+                sum(tilde_z[,category]*(mu_0-B_g)^2/(A*(mu_0-B_g)^2+C_g)))
         
         d_lambda = sum(tilde_z[,category] * alpha * (nu + digamma(n/2+alpha) - digamma(alpha))) - alpha * ( sum(tilde_z[,category] * log(A * (mu_0 - B_g)^2 + C_g)) )
         
         d_nu = sum(tilde_z[,category]) * alpha - beta * (n/2 + alpha) * (sum(tilde_z[,category] / (A * (mu_0 - B_g)^2 + C_g)))
         
-        gradient_temp[,category] = c(d_delta, d_k, d_lambda, d_nu)
+        gradient_temp[,category] = c(d_delta, d_xi, d_lambda, d_nu)
     }
 
     result = c(gradient_temp)
@@ -269,9 +269,9 @@ eLNNpaired_cluster_wise <- function(
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
-  k_1 = k_prior
-  k_2 = k_prior
-  k_3 = k_prior
+  xi_1 = log(k_prior)
+  xi_2 = xi_1
+  xi_3 = xi_1
 
   lambda_1 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
   lambda_2 = lambda_1
@@ -286,9 +286,9 @@ eLNNpaired_cluster_wise <- function(
     hist(log10(temp_tau))
   }
 
-  psi = c(delta_1, k_1, lambda_1, nu_1,
-          delta_2, k_2, lambda_2, nu_2,
-          0,       k_3, lambda_3, nu_3)
+  psi = c(delta_1, xi_1, lambda_1, nu_1,
+          delta_2, xi_2, lambda_2, nu_2,
+          0,       xi_3, lambda_3, nu_3)
 
   t_pi = t_pi_prior
 
@@ -313,8 +313,8 @@ eLNNpaired_cluster_wise <- function(
     t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
     n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
     b = b, converge_threshold = converge_threshold, infinity = infinity,
-    lower=param_limit_min, 
-    upper=param_limit_max,
+    # lower=param_limit_min, 
+    # upper=param_limit_max,
     control = list(maxit = max_iteration_num_in_optim))
 
   repeated_times = 0  
@@ -358,8 +358,8 @@ eLNNpaired_cluster_wise <- function(
       t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
       n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
       b = b, converge_threshold = converge_threshold, infinity = infinity,
-      lower=param_limit_min, 
-      upper=param_limit_max,
+      # lower=param_limit_min, 
+      # upper=param_limit_max,
       control = list(maxit = max_iteration_num_in_optim))
 
     #if (abs(last_mleinfo$value - mleinfo$value)<converge_threshold) break
