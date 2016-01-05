@@ -10,6 +10,8 @@
 # G is the number of genes,
 # n is the number of test samples for every genes
 
+library(iCheck)
+
 eLNNpaired_cluster_wise <- function(
   E_Set,
   b = c(2,2,2), 
@@ -253,33 +255,95 @@ eLNNpaired_cluster_wise <- function(
     return (c(t1,t2,t3))
   }
 
+  column_names = colnames(fData(E_Set))
+
+  result_limma = lmFitPaired(
+    E_Set,
+    probeID.var = column_names[1],
+    gene.var = column_names[2],
+    chr.var = column_names[3])
+
+  frame_unsorted = result_limma$frame.unsorted
+  over_expressed_sub_script = frame_unsorted$pos[which(frame_unsorted$stats > 0 & frame_unsorted$p.adj < 0.05)]
+  under_expressed_sub_script = frame_unsorted$pos[which(frame_unsorted$stats < 0 & frame_unsorted$p.adj < 0.05)]
+  non_diff_sub_script = frame_unsorted$pos[which(frame_unsorted$p.adj >= 0.05)]
+
+  t_pi_prior = c(
+    length(under_expressed_sub_script)/G,
+    length(over_expressed_sub_script)/G,
+    0)
+  t_pi_prior[3] = 1 - t_pi_prior[1] - t_pi_prior[2]
+
+  over_expressed_E_Set = E_Set[over_expressed_sub_script]
+  under_expressed_E_Set = E_Set[under_expressed_sub_script]
+  non_diff_E_Set = E_Set[non_diff_sub_script]
+  
+  #########################################
+  # cluster 1
+  data_matrix_of_E_Set = exprs(over_expressed_E_Set)
+
   median_dgl_by_l = apply(data_matrix_of_E_Set, 1, median, na.rm=TRUE)
 
   sorted_median_dgl_by_l = sort(median_dgl_by_l)
 
-  temp = median(sorted_median_dgl_by_l[(ceiling(G * (1 - t_pi_prior[1]))):G], na.rm=TRUE)
+  temp = median(sorted_median_dgl_by_l, na.rm=TRUE)
   if (temp>0) delta_1 = log(temp)
-  else delta_1 = delta_1_min
-
-  temp = median(sorted_median_dgl_by_l[1:(trunc(G * t_pi_prior[2]))], na.rm=TRUE)
-  if (temp<0) delta_2 = log(-temp)
-  else delta_2 = delta_2_min
+  else delta_1 = param_limit_min[1]
 
   temp_tau = 1 / (apply(data_matrix_of_E_Set, 1, mad, na.rm=TRUE)^2)
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
   xi_1 = log(k_prior)
-  xi_2 = xi_1
-  xi_3 = xi_1
 
   lambda_1 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
-  lambda_2 = lambda_1
-  lambda_3 = lambda_1
-
   nu_1 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
-  nu_2 = nu_1
-  nu_3 = nu_1
+  # end of cluster 1
+  #########################################
+
+  #########################################
+  # cluster 2
+  data_matrix_of_E_Set = exprs(under_expressed_E_Set)
+
+  median_dgl_by_l = apply(data_matrix_of_E_Set, 1, median, na.rm=TRUE)
+
+  sorted_median_dgl_by_l = sort(median_dgl_by_l)
+
+  temp = median(sorted_median_dgl_by_l, na.rm=TRUE)
+  if (temp>0) delta_2 = log(temp)
+  else delta_2 = param_limit_min[5]
+
+  temp_tau = 1 / (apply(data_matrix_of_E_Set, 1, mad, na.rm=TRUE)^2)
+  omega = mad(median_dgl_by_l)^2
+  k_prior = omega * median(temp_tau, na.rm=TRUE)
+
+  xi_2 = log(k_prior)
+
+  lambda_2 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
+  nu_2 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
+  # end of cluster 2
+  #########################################
+
+  #########################################
+  # cluster 3
+  data_matrix_of_E_Set = exprs(non_diff_E_Set)
+
+  median_dgl_by_l = apply(data_matrix_of_E_Set, 1, median, na.rm=TRUE)
+
+  sorted_median_dgl_by_l = sort(median_dgl_by_l)
+
+  temp_tau = 1 / (apply(data_matrix_of_E_Set, 1, mad, na.rm=TRUE)^2)
+  omega = mad(median_dgl_by_l)^2
+  k_prior = omega * median(temp_tau, na.rm=TRUE)
+
+  xi_3 = log(k_prior)
+
+  lambda_3 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
+  nu_3 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
+  # end of cluster 3
+  #########################################
+
+  data_matrix_of_E_Set = exprs(E_Set)
 
   if (plot)
   {
