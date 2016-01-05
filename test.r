@@ -10,9 +10,9 @@ G = 10000
 n = 100
 times = 1
 
-delta_1 = 1
-delta_2 = 1
-k = 2
+delta_1 = 2
+delta_2 = 2
+k = exp(1)
 lambda = 3
 nu = 1
 

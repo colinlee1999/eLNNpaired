@@ -46,10 +46,11 @@ eLNNpaired <- function(
   {
     delta_1 = psi[1]
     delta_2 = psi[2]
-    k = psi[3]
+    xi = psi[3]
     lambda = psi[4]
     nu = psi[5]
 
+    k = exp(xi)
     alpha = exp(psi[4])
     beta = exp(psi[5])
 
@@ -162,10 +163,11 @@ eLNNpaired <- function(
   {
     delta_1 = psi[1]
     delta_2 = psi[2]
-    k = psi[3]
+    xi = psi[3]
     lambda = psi[4]
     nu = psi[5]
 
+    k = exp(xi)
     alpha = exp(psi[4])
     beta = exp(psi[5])
 
@@ -180,7 +182,7 @@ eLNNpaired <- function(
 
     d_delta_2 = - sum( tilde_z[,2] * (2*A*(exp(delta_2) + B_g))/(A*(exp(delta_2) + B_g)^2 + C_g)) * (n/2+alpha) * exp(delta_2)
 
-    d_k = - (n * G)/(2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2 + alpha) * (sum(tilde_z[,1] * (exp(delta_1) - B_g)^2 / (A * (exp(delta_1) - B_g)^2 + C_g)) + sum(tilde_z[,2] * (exp(delta_2) + B_g)^2 / (A * (exp(delta_2) + B_g)^2 + C_g)) + sum(tilde_z[,3] * (B_g)^2 / (A * (B_g)^2 + C_g)))
+    d_xi = k * (- (n * G)/(2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2 + alpha) * (sum(tilde_z[,1] * (exp(delta_1) - B_g)^2 / (A * (exp(delta_1) - B_g)^2 + C_g)) + sum(tilde_z[,2] * (exp(delta_2) + B_g)^2 / (A * (exp(delta_2) + B_g)^2 + C_g)) + sum(tilde_z[,3] * (B_g)^2 / (A * (B_g)^2 + C_g))))
 
     d_lambda = G * exp(lambda) * (nu + digamma(n/2+alpha) - digamma(alpha)) - exp(lambda) * ( sum(tilde_z[,1] * log(A * (exp(delta_1) - B_g)^2 + C_g)) + sum(tilde_z[,2] * log(A * (exp(delta_2) + B_g)^2 + C_g)) + sum(tilde_z[,3] * log(A * (B_g)^2 + C_g)))
 
@@ -189,7 +191,7 @@ eLNNpaired <- function(
     result = c(
       d_delta_1, 
       d_delta_2, 
-      d_k, 
+      d_xi, 
       d_lambda, 
       d_nu) 
 
@@ -257,7 +259,7 @@ eLNNpaired <- function(
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
-  k = k_prior
+  xi = log(k_prior)
 
   lambda = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
   nu = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
@@ -267,7 +269,7 @@ eLNNpaired <- function(
     hist(log10(temp_tau))
   }
 
-  psi = c(delta_1, delta_2, k, lambda, nu)
+  psi = c(delta_1, delta_2, xi, lambda, nu)
 
   t_pi = t_pi_prior
 
@@ -292,8 +294,8 @@ eLNNpaired <- function(
     t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
     n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
     b = b, converge_threshold = converge_threshold, infinity = infinity,
-    lower=param_limit_min, 
-    upper=param_limit_max,
+    # lower=param_limit_min, 
+    # upper=param_limit_max,
     control = list(maxit = max_iteration_num_in_optim))
 
   repeated_times = 0  
@@ -337,8 +339,8 @@ eLNNpaired <- function(
       t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
       n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
       b = b, converge_threshold = converge_threshold, infinity = infinity,
-      lower=param_limit_min, 
-      upper=param_limit_max,
+      # lower=param_limit_min, 
+      # upper=param_limit_max,
       control = list(maxit = max_iteration_num_in_optim))
 
     #if (abs(last_mleinfo$value - mleinfo$value)<converge_threshold) break
