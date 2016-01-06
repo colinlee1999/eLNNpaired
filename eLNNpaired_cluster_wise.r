@@ -299,6 +299,15 @@ eLNNpaired_cluster_wise <- function(
     sum_dgl_by_l, 
     sum_dgl_square_by_l,
     n)
+  
+  mleinfo = optim(par = psi, fn = negative_l_c, gr = gradient_negative_l_c, 
+    t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
+    n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
+    b = b, converge_threshold = converge_threshold, infinity = infinity,
+    # lower=param_limit_min, 
+    # upper=param_limit_max,
+    control = list(maxit = max_iteration_num_in_optim))
+
   t_pi = get_t_pi(
     psi, 
     t_pi, 
@@ -309,14 +318,6 @@ eLNNpaired_cluster_wise <- function(
     b,
     converge_threshold,
     infinity)
-
-  mleinfo = optim(par = psi, fn = negative_l_c, gr = gradient_negative_l_c, 
-    t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
-    n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
-    b = b, converge_threshold = converge_threshold, infinity = infinity,
-    # lower=param_limit_min, 
-    # upper=param_limit_max,
-    control = list(maxit = max_iteration_num_in_optim))
 
   repeated_times = 0  
 
@@ -337,17 +338,6 @@ eLNNpaired_cluster_wise <- function(
       sum_dgl_square_by_l, 
       n)
 
-    t_pi = get_t_pi(
-      psi, 
-      t_pi, 
-      sum_dgl_by_l, 
-      sum_dgl_square_by_l, 
-      n, 
-      tilde_z,
-      b,
-      converge_threshold,
-      infinity)
-
     if (verbose)
     {
       print(psi)
@@ -362,6 +352,17 @@ eLNNpaired_cluster_wise <- function(
       # lower=param_limit_min, 
       # upper=param_limit_max,
       control = list(maxit = max_iteration_num_in_optim))
+
+    t_pi = get_t_pi(
+      psi, 
+      t_pi, 
+      sum_dgl_by_l, 
+      sum_dgl_square_by_l, 
+      n, 
+      tilde_z,
+      b,
+      converge_threshold,
+      infinity)
 
     #if (abs(last_mleinfo$value - mleinfo$value)<converge_threshold) break
     if (sum(abs(last_mleinfo$par - mleinfo$par))<converge_threshold) break
