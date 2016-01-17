@@ -262,7 +262,8 @@ eLNNpaired_cluster_wise_limma_prior <- function(
     E_Set,
     probeID.var = column_names[1],
     gene.var = column_names[2],
-    chr.var = column_names[3])
+    chr.var = column_names[3],
+    verbose = FALSE)
 
   frame_unsorted = result_limma$frame.unsorted
   over_expressed_sub_script = frame_unsorted$pos[which(frame_unsorted$stats > 0 & frame_unsorted$p.adj < 0.05)]
