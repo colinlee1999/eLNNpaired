@@ -22,22 +22,13 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   infinity = 1e100,
   converge_threshold = 1e-6,
   param_limit_min = c(-6,0.01,-6,-6,-6,0.01,-6,-6,0,0.01,-6,-6),
-  param_limit_max = c(6,100,6,6,6,100,6,6,0,100,6,6),
+  param_limit_max = c(6,0.99,6,6,6,0.99,6,6,0,0.99,6,6),
   max_iteration_num_in_optim = 100,
-  max_repeated_times = 1000
+  max_repeated_times = 500,
+  c1 = qnorm(0.95),
+  c2 = qnorm(0.05)
   )
 {
-  G = nrow(E_Set)
-  n = ncol(E_Set)
-
-  data_matrix_of_E_Set = exprs(E_Set)
-
-  # 'sum_dgl_by_l' is an G * 1 matrix, the summation result of every row of 'data_matrix_of_E_Set'
-  sum_dgl_by_l = apply(data_matrix_of_E_Set,1,sum, na.rm=TRUE)
-
-  # 'sum_dgl_square_by_l' is an G * 1 matrix, the summation of every squared elements of 'data_matrix_of_E_Set' by row
-  sum_dgl_square_by_l = apply(data_matrix_of_E_Set^2,1,sum, na.rm = TRUE)
-
   # initial values of 'psi' = (\delta_1, \delta_2, k, \lambda, \nu)
   # lf123 returns log likelihood log p_1 log p_2 log p_3,
   # specific return value depends on the last parameter 'category'
@@ -53,20 +44,33 @@ eLNNpaired_cluster_wise_limma_prior <- function(
 
     for (category in 1:3)
     {
-      mu_0 = exp(psi[category*4-3])
+      if (category == 1)
+      {
+        mu_0 = exp(psi[category*4-3])
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        alpha = exp(psi[category*4-1]) + 1 + beta * c1^2 * (1+sqrt(k))^2/mu_0^2
+      }
+      else if (category == 2)
+      {
+        mu_0 = -exp(psi[category*4-3])
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        alpha = exp(psi[category*4-1]) + 1 + beta * c2^2 * (1+sqrt(k))^2/mu_0^2
+      }
+      else
+      {
+        mu_0 = 0
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        alpha = exp(psi[category*4-1])
+      }
 
-      if (category == 2) mu_0 = -mu_0
-      if (category == 3) mu_0 = 0
-
-      k = exp(psi[category*4-2])
-      alpha = exp(psi[category*4-1])
-      beta = exp(psi[category*4])
-    
       A = n/(2*(n*k+1))
       B_g = sum_dgl_by_l/n
       C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
       D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) - n/2 * log(2*pi) - log(n*k+1)/2
-    
+
       result[,category] = D - (n/2+alpha) * log (C_g + A * (mu_0 - B_g)^2)
     }
 
@@ -108,9 +112,9 @@ eLNNpaired_cluster_wise_limma_prior <- function(
     converge_threshold, 
     infinity)
   {
-    if (t_pi[1]<converge_threshold && t_pi[2]<converge_threshold) return (-infinity)
-    if (t_pi[1]<converge_threshold && t_pi[3]<converge_threshold) return (-infinity)
-    if (t_pi[2]<converge_threshold && t_pi[3]<converge_threshold) return (-infinity)
+    # if (t_pi[1]<converge_threshold && t_pi[2]<converge_threshold) return (-infinity)
+    # if (t_pi[1]<converge_threshold && t_pi[3]<converge_threshold) return (-infinity)
+    # if (t_pi[2]<converge_threshold && t_pi[3]<converge_threshold) return (-infinity)
 
     logf = lf123(psi, sum_dgl_by_l, sum_dgl_square_by_l, n)
 
@@ -171,39 +175,51 @@ eLNNpaired_cluster_wise_limma_prior <- function(
 
     for (category in 1:3)
     {
-      mu_0 = exp(psi[category*4-3])
-        k = exp(psi[category*4-2])
-        
-        lambda = psi[category*4-1]
-        nu = psi[category*4]
-
-        alpha = exp(psi[category*4-1])
+      if (category == 1)
+      {
+        mu_0 = exp(psi[category*4-3])
+        k = pnorm(psi[category*4-2])
         beta = exp(psi[category*4])
+        lambda = psi[category*4-1]
+        alpha = exp(lambda) + 1 + beta * c1^2 * (1+sqrt(k))^2/mu_0^2
+      }
+      else if (category == 2)
+      {
+        mu_0 = -exp(psi[category*4-3])
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        lambda = psi[category*4-1]
+        alpha = exp(lambda) + 1 + beta * c2^2 * (1+sqrt(k))^2/mu_0^2
+      }
+      else
+      {
+        mu_0 = 0
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        lambda = psi[category*4-1]
+        alpha = exp(lambda)
+      }
 
+      A = n/(2*(n*k+1))
+      B_g = sum_dgl_by_l/n
+      C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
+      D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) -n/2 * log(2*pi) - log(n*k+1)/2
+      
+      d_delta = - sum(tilde_z[,category] * (2*A*(mu_0 - B_g))/(A*(mu_0 - B_g)^2 + C_g) * (n/2 + alpha) * mu_0)
 
-        A = n/(2*(n*k+1))
-        B_g = sum_dgl_by_l/n
-        C_g = beta + sum_dgl_square_by_l/2 - (sum_dgl_by_l)^2/(2*n)
-        D = alpha * log(beta) + lgamma(n/2+alpha) - lgamma(alpha) -n/2 * log(2*pi) - log(n*k+1)/2
-        
-        if (category == 2) mu_0 = - mu_0
-        if (category == 3) mu_0 = 0
+      if (category == 3)
+      {
+        d_delta = 0
+      }
 
-        d_delta = - sum(tilde_z[,category] * (2*A*(mu_0 - B_g))/(A*(mu_0 - B_g)^2 + C_g) * (n/2 + alpha) * mu_0)
-
-        if (category == 3)
-        {
-          d_delta = 0
-        }
-
-        d_xi = k * ( - (n * sum(tilde_z[,category])) / (2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2+alpha) *
-                sum(tilde_z[,category]*(mu_0-B_g)^2/(A*(mu_0-B_g)^2+C_g)))
-        
-        d_lambda = sum(tilde_z[,category] * alpha * (nu + digamma(n/2+alpha) - digamma(alpha))) - alpha * ( sum(tilde_z[,category] * log(A * (mu_0 - B_g)^2 + C_g)) )
-        
-        d_nu = sum(tilde_z[,category]) * alpha - beta * (n/2 + alpha) * (sum(tilde_z[,category] / (A * (mu_0 - B_g)^2 + C_g)))
-        
-        gradient_temp[,category] = c(d_delta, d_xi, d_lambda, d_nu)
+      d_xi = dnorm(qnorm(k)) * ( - (n * sum(tilde_z[,category])) / (2*(n*k+1)) + (n^2)/(2*(n*k+1)^2) * (n/2+alpha) *
+              sum(tilde_z[,category]*(mu_0-B_g)^2/(A*(mu_0-B_g)^2+C_g)))
+      
+      d_lambda = exp(lambda) * (sum(tilde_z[,category] * (log(beta) + digamma(n/2+alpha) - digamma(alpha))) -  ( sum(tilde_z[,category] * log(A * (mu_0 - B_g)^2 + C_g)) ))
+      
+      d_nu = beta * (sum(tilde_z[,category]) * alpha / beta -  (n/2 + alpha) * (sum(tilde_z[,category] / (A * (mu_0 - B_g)^2 + C_g))))
+      
+      gradient_temp[,category] = c(d_delta, d_xi, d_lambda, d_nu)
     }
 
     result = c(gradient_temp)
@@ -256,6 +272,19 @@ eLNNpaired_cluster_wise_limma_prior <- function(
     return (c(t1,t2,t3))
   }
 
+  ################ body
+
+  G = nrow(E_Set)
+  n = ncol(E_Set)
+
+  data_matrix_of_E_Set = exprs(E_Set)
+
+  # 'sum_dgl_by_l' is an G * 1 matrix, the summation result of every row of 'data_matrix_of_E_Set'
+  sum_dgl_by_l = apply(data_matrix_of_E_Set,1,sum, na.rm=TRUE)
+
+  # 'sum_dgl_square_by_l' is an G * 1 matrix, the summation of every squared elements of 'data_matrix_of_E_Set' by row
+  sum_dgl_square_by_l = apply(data_matrix_of_E_Set^2,1,sum, na.rm = TRUE)
+
   column_names = colnames(fData(E_Set))
 
   result_limma = lmFitPaired(
@@ -296,10 +325,16 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
-  xi_1 = log(k_prior)
+  if (k_prior>=1) k_prior = param_limit_max[2]
+  xi_1 = qnorm(k_prior)
 
-  lambda_1 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
-  nu_1 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
+  alpha = (median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2)
+  beta = median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2)
+  nu_1 = log(beta)
+  exp_lambda_1 = alpha - 1 - beta*c1^2*(1+sqrt(k_prior))^2/exp(delta_1)
+  if (exp_lambda_1<0) lambda_1 = param_limit_min[3]
+  else lambda_1 = log(exp_lambda_1)
+  
   # end of cluster 1
   #########################################
 
@@ -312,6 +347,7 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   sorted_median_dgl_by_l = sort(median_dgl_by_l)
 
   temp = median(sorted_median_dgl_by_l, na.rm=TRUE)
+  temp = - temp
   if (temp>0) delta_2 = log(temp)
   else delta_2 = param_limit_min[5]
 
@@ -319,10 +355,15 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
-  xi_2 = log(k_prior)
+  if (k_prior>=1) k_prior = param_limit_max[6]
+  xi_2 = qnorm(k_prior)
 
-  lambda_2 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
-  nu_2 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
+  alpha = (median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2)
+  beta = median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2)
+  nu_2 = log(beta)
+  exp_lambda_2 = alpha - 1 - beta*c2^2*(1+sqrt(k_prior))^2/exp(delta_2)
+  if (exp_lambda_2<0) lambda_2 = param_limit_min[7]
+  else lambda_2 = log(exp_lambda_2)
   # end of cluster 2
   #########################################
 
@@ -338,7 +379,8 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   omega = mad(median_dgl_by_l)^2
   k_prior = omega * median(temp_tau, na.rm=TRUE)
 
-  xi_3 = log(k_prior)
+  if (k_prior>=1) k_prior = param_limit_max[10]
+  xi_3 = qnorm(k_prior)
 
   lambda_3 = log((median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2))
   nu_3 = log(median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2))
@@ -364,8 +406,69 @@ eLNNpaired_cluster_wise_limma_prior <- function(
     sum_dgl_by_l, 
     sum_dgl_square_by_l,
     n)
+
+  ####################################################
+  ########### for test
+  if (0)
+  {
+    focus = 1
+    precision = 0.01
+    psi[focus] = psi[focus] - precision
+    f_1 = l_c(
+      psi, 
+      t_pi, 
+      sum_dgl_by_l, 
+      sum_dgl_square_by_l, 
+      n, 
+      tilde_z, 
+      b, 
+      converge_threshold, 
+      infinity)
+    psi[focus] = psi[focus] + precision
+    f_2 = l_c(
+      psi, 
+      t_pi, 
+      sum_dgl_by_l, 
+      sum_dgl_square_by_l, 
+      n, 
+      tilde_z, 
+      b, 
+      converge_threshold, 
+      infinity)
+    psi[focus] = psi[focus] + precision
+    f_3 = l_c(
+      psi, 
+      t_pi, 
+      sum_dgl_by_l, 
+      sum_dgl_square_by_l, 
+      n, 
+      tilde_z, 
+      b, 
+      converge_threshold, 
+      infinity)
+    psi[focus] = psi[focus] - precision
+    true_gradient = gradient_l_c(
+      psi, 
+      t_pi, 
+      sum_dgl_by_l, 
+      sum_dgl_square_by_l, 
+      n, 
+      tilde_z, 
+      b, 
+      converge_threshold, 
+      infinity)[focus]
+    approx = (f_3 - f_1)/(2*precision)
+    cat("approx>>\t",approx,"\n")
+    cat("true>>\t",true_gradient,"\n")
+    diff = approx - true_gradient
+    cat("diff>>\t",diff,"\n")
+    stop()
+  }
+
+  ########### end of for test
+  ####################################################
   
-  mleinfo = optim(par = psi, fn = negative_l_c, gr = gradient_negative_l_c, 
+  mleinfo = optim(par = psi, fn = negative_l_c, #gr = gradient_negative_l_c, 
     t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
     n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
     b = b, converge_threshold = converge_threshold, infinity = infinity,
@@ -410,7 +513,7 @@ eLNNpaired_cluster_wise_limma_prior <- function(
     }
 
     last_mleinfo = mleinfo
-    mleinfo = optim(par = psi, fn = negative_l_c, gr = gradient_negative_l_c, 
+    mleinfo = optim(par = psi, fn = negative_l_c, #gr = gradient_negative_l_c, 
       t_pi = t_pi, sum_dgl_by_l = sum_dgl_by_l, sum_dgl_square_by_l = sum_dgl_square_by_l, 
       n = n, tilde_z = tilde_z, method = 'L-BFGS-B', 
       b = b, converge_threshold = converge_threshold, infinity = infinity,
