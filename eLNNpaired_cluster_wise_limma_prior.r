@@ -311,7 +311,7 @@ eLNNpaired_cluster_wise_limma_prior <- function(
 
   sorted_median_dgl_by_l = sort(median_dgl_by_l)
 
-  temp = median(sorted_median_dgl_by_l, na.rm=TRUE)
+  temp = -median(sorted_median_dgl_by_l, na.rm=TRUE)
   if (temp>0) delta_2 = log(temp)
   else delta_2 = param_limit_min[5]
 
