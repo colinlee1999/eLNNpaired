@@ -7,7 +7,7 @@
 gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi, c1, c2)
 {
   data = matrix(, nrow = G, ncol = n)
-  # t_matrix <<- matrix(, nrow = G, ncol = 1)
+  # t_matrix <<- matrix(, nrow = G, ncol = 2)
   category_info = matrix(rep(0,G*3),G,3)
 
   colnames(category_info) = c("true_cluster","est_cluster","flag")
@@ -48,7 +48,8 @@ gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi, c1,
 
     mu_g = rnorm(1, mean = mu_0, sd = sqrt(k/tau_g))
 
-    # t_matrix[row,] <<- mu_g * sqrt(tau_g)
+    # t_matrix[row,1] <<- mu_g * sqrt(tau_g)
+    # t_matrix[row,2] <<- mu_g
 
     data[row,] = rnorm(n,mean = mu_g, sd = sqrt(1/tau_g))
   }
