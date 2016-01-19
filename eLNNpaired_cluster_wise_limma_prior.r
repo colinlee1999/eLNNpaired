@@ -331,7 +331,7 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   alpha = (median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2)
   beta = median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2)
   nu_1 = log(beta)
-  exp_lambda_1 = alpha - 1 - beta*c1^2*(1+sqrt(k_prior))^2/exp(delta_1)
+  exp_lambda_1 = alpha - 1 - beta*c1^2*(1+sqrt(k_prior))^2/exp(delta_1)^2
   if (exp_lambda_1<0) lambda_1 = param_limit_min[3]
   else lambda_1 = log(exp_lambda_1)
   
@@ -361,7 +361,7 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   alpha = (median(temp_tau, na.rm=TRUE)^2)/(mad(temp_tau, na.rm=TRUE)^2)
   beta = median(temp_tau, na.rm=TRUE)/(mad(temp_tau, na.rm=TRUE)^2)
   nu_2 = log(beta)
-  exp_lambda_2 = alpha - 1 - beta*c2^2*(1+sqrt(k_prior))^2/exp(delta_2)
+  exp_lambda_2 = alpha - 1 - beta*c2^2*(1+sqrt(k_prior))^2/exp(delta_2)^2
   if (exp_lambda_2<0) lambda_2 = param_limit_min[7]
   else lambda_2 = log(exp_lambda_2)
   # end of cluster 2

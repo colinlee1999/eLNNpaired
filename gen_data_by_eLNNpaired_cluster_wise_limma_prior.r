@@ -21,24 +21,28 @@ gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi)
 
     category_info[row,1] = category
 
-    mu_0 = exp(psi[category*4-3])
-    k = psi[category*4-2]
-    alpha = exp(psi[category*4-1])
-    beta = exp(psi[category*4])
-
     if (category == 1)
-    {
-      mu_0 = mu_0
-    }
-    else if (category ==2)
-    {
-      mu_0 = - mu_0
-    }
-    else
-    {
-      mu_0 = 0
-    }
-    
+      {
+        mu_0 = exp(psi[category*4-3])
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        alpha = exp(psi[category*4-1]) + 1 + beta * qnorm(0.95)^2 * (1+sqrt(k))^2/mu_0^2
+      }
+      else if (category == 2)
+      {
+        mu_0 = -exp(psi[category*4-3])
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        alpha = exp(psi[category*4-1]) + 1 + beta * qnorm(0.05)^2 * (1+sqrt(k))^2/mu_0^2
+      }
+      else
+      {
+        mu_0 = 0
+        k = pnorm(psi[category*4-2])
+        beta = exp(psi[category*4])
+        alpha = exp(psi[category*4-1])
+      }
+
     tau_g = rgamma(1, alpha, beta)
 
     mu_g = rnorm(1, mean = mu_0, sd = sqrt(k/tau_g))

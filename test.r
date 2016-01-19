@@ -4,34 +4,55 @@ library("clues")
 
 source('gen_data_by_eLNNpaired_cluster_wise_limma_prior.r')
 source('eLNNpaired_cluster_wise_limma_prior.r')
-source('rough_analyze.r')
+#source('rough_analyze.r')
+source('icheck')
 
-G = 1000
-n = 100
+G = 10000
+n = 30
 times = 1
 
 delta_1 = 1
-k_1 = exp(1)
+xi_1 = 0.84
 lambda_1 = 3
 nu_1 = 1
 
 delta_2 = 1
-k_2 = exp(1)
+xi_2 = 0.84
 lambda_2 = 3
 nu_2 = 1
 
-k_3 = exp(1)
-lambda_3 = 3
+k_3 = pnorm(1)
+xi_3 = 0.84
 nu_3 = 1
 
-psi = c(delta_1, k_1, lambda_1, nu_1,
-        delta_2, k_2, lambda_2, nu_2,
-        0,       k_3, lambda_3, nu_3)
+psi = c(delta_1, xi_1, lambda_1, nu_1,
+        delta_2, xi_2, lambda_2, nu_2,
+        0,       xi_3, lambda_3, nu_3)
 b = c(2,2,2)
 t_pi = c(0.05, 0.05, 0.90)
 
+generate = 0
+if (generate)
+{
+	E_Set = gen_data_by_eLNNpaired_cluster_wise_limma_prior(G,n,psi,t_pi)	
+	saveRDS(es, file = 'es.Rdata')
+}
+else
+{
+	E_Set = readRDS('es.Rdata')
+}
 
-es = gen_data_by_eLNNpaired_cluster_wise_limma_prior(G,n,psi,t_pi)
-result = eLNNpaired_cluster_wise_limma_prior(es, verbose = 1, is_sim =1)
+result_limma = lmFitPaired(
+		E_Set, 
+		probeID.var = "true_cluster", 
+		gene.var = "est_cluster", 
+		chr.var = "flag",
+		verbose = FALSE)
 
-print(table(fData(result$E_Set)$est_cluster))
+result_limma$memGenes[which(result_limma$memGenes==2)] = 4
+result_limma$memGenes[which(result_limma$memGenes==3)] = 2
+result_limma$memGenes[which(result_limma$memGenes==4)] = 3
+
+result = eLNNpaired_cluster_wise_limma_prior(E_Set, verbose = 1, is_sim =1)
+
+print(table(fData(result$E_Set)$est_cluster,fData(result$E_Set)$true_cluster))
