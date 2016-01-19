@@ -4,7 +4,7 @@
 # assayData[['exprs']] is an G by n matrix
 # featureData describes if gene i is differentially expressed
 
-gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi)
+gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi, c1, c2)
 {
   data = matrix(, nrow = G, ncol = n)
   category_info = matrix(rep(0,G*3),G,3)
@@ -26,14 +26,14 @@ gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi)
         mu_0 = exp(psi[category*4-3])
         k = pnorm(psi[category*4-2])
         beta = exp(psi[category*4])
-        alpha = exp(psi[category*4-1]) + 1 + beta * qnorm(0.95)^2 * (1+sqrt(k))^2/mu_0^2
+        alpha = exp(psi[category*4-1]) + 1 + beta * c1^2 * (1+sqrt(k))^2/mu_0^2
       }
       else if (category == 2)
       {
         mu_0 = -exp(psi[category*4-3])
         k = pnorm(psi[category*4-2])
         beta = exp(psi[category*4])
-        alpha = exp(psi[category*4-1]) + 1 + beta * qnorm(0.05)^2 * (1+sqrt(k))^2/mu_0^2
+        alpha = exp(psi[category*4-1]) + 1 + beta * c2^2 * (1+sqrt(k))^2/mu_0^2
       }
       else
       {
