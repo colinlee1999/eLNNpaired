@@ -292,6 +292,9 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   G = nrow(E_Set)
   n = ncol(E_Set)
 
+  c1 = c1 / sqrt(n)
+  c2 = c2 / sqrt(n)
+
   data_matrix_of_E_Set = exprs(E_Set)
 
   # 'sum_dgl_by_l' is an G * 1 matrix, the summation result of every row of 'data_matrix_of_E_Set'
@@ -412,6 +415,9 @@ eLNNpaired_cluster_wise_limma_prior <- function(
   psi = c(delta_1, xi_1, lambda_1, nu_1,
           delta_2, xi_2, lambda_2, nu_2,
           0,       xi_3, lambda_3, nu_3)
+  psi = c(0,0,0,0,
+        0,0,0,0,
+        0,0,0,0)
 
   t_pi = t_pi_prior
 
