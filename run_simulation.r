@@ -5,30 +5,39 @@ rm(list = ls())
 start_time = proc.time()
 
 library("Biobase")
-# library("gtools")
 library("clues")
 
-source('gen_data_by_lnn.r')
-source('lnn.r')
+source('gen_data_by_eLNNpaired_cluster_wise_limma_prior.r')
+source('eLNNpaired_cluster_wise_limma_prior.r')
 source('rough_analyze.r')
 
 G = 10000
-n = 100
-times = 100
+n = 30
+times = 1
 
-delta_1 = 1
-delta_2 = 1
-k = 2
-lambda = 3
-nu = 1
+delta_1 = 0
+xi_1 = 0
+lambda_1 = 3
+nu_1 = -1
 
-psi = c(delta_1, delta_2, k, lambda, nu)
+delta_2 = 0
+xi_2 = 0
+lambda_2 = 3
+nu_2 = -1
+
+xi_3 = -3
+lambda_3 = 3
+nu_3 = -1
+
+psi = c(delta_1, xi_1, lambda_1, nu_1,
+        delta_2, xi_2, lambda_2, nu_2,
+        0,       xi_3, lambda_3, nu_3)
 b = c(2,2,2)
 t_pi = c(0.05, 0.05, 0.90)
 
+c1 = qnorm(0.95)
+c2 = qnorm(0.05)
 
-t_pi_prior = c(0.33, 0.33, 0.34)
-k_prior = 0.1
 
 
 file_to_save_psi = 'psi.txt'
