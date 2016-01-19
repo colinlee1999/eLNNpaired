@@ -6,8 +6,8 @@
 
 gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi, c1, c2)
 {
-  c1 = c1 / sqrt(n)
-  c2 = c2 / sqrt(n)
+  # c1 = c1 / sqrt(n)
+  # c2 = c2 / sqrt(n)
   data = matrix(, nrow = G, ncol = n)
   t_matrix <<- matrix(, nrow = G, ncol = 2)
   category_info = matrix(rep(0,G*3),G,3)
@@ -50,7 +50,7 @@ gen_data_by_eLNNpaired_cluster_wise_limma_prior <- function(G, n, psi, t_pi, c1,
 
     if (category == 3)
     {
-      mu_g = rnorm(1, mean = mu_0, sd = sqrt(k/tau_g))
+      mu_g = 0
     }
     else{
       mu_g = rnorm(1, mean = mu_0, sd = sqrt(k/tau_g))

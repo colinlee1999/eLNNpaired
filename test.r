@@ -53,8 +53,8 @@ psi = c(delta_1, xi_1, lambda_1, nu_1,
 b = c(2,2,2)
 t_pi = c(0.05, 0.05, 0.90)
 
-c1 = qnorm(0.95)
-c2 = qnorm(0.05)
+c1 = qnorm(0.05)
+c2 = qnorm(0.95)
 
 generate = 1
 if (generate)
@@ -77,19 +77,19 @@ result_limma$memGenes[which(result_limma$memGenes==2)] = 4
 result_limma$memGenes[which(result_limma$memGenes==3)] = 2
 result_limma$memGenes[which(result_limma$memGenes==4)] = 3
 
-result = eLNNpaired_cluster_wise_limma_prior(E_Set, verbose = 1, is_sim = 1, c1 = c1, c2 = c2, max_repeated_times = 500)
-result$time = proc.time() - start_time
+# result = eLNNpaired_cluster_wise_limma_prior(E_Set, verbose = 1, is_sim = 1, c1 = c1, c2 = c2, max_repeated_times = 500)
+# result$time = proc.time() - start_time
 
-print(table(fData(result$E_Set)$true_cluster,fData(result$E_Set)$est_cluster))
-print(table(fData(result$E_Set)$true_cluster,result_limma$memGenes))
-print(result$time)
+# print(table(fData(result$E_Set)$true_cluster,fData(result$E_Set)$est_cluster))
+print(table(fData(E_Set)$true_cluster,result_limma$memGenes))
+# print(result$time)
 
 source('draw_mu_g_tau_g.r')
 
-# sub_script = intersect(which(result_limma$memGenes == 1),which(fData(result$E_Set)$true_cluster == 3))[1]
-
-# dat = exprs(E_Set)
-# hist(dat[sub_script,])
+sub_script = intersect(which(result_limma$memGenes == 1),which(fData(E_Set)$true_cluster == 3))[1]
+dat = exprs(E_Set)
+hist(dat[sub_script,])
+print(t_matrix[sub_script,1]/t_matrix[sub_script,2])
 
 # fDat = fData(result$E_Set)
 # postscript(file = 'temp.ps')
